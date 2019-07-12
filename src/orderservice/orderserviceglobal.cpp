@@ -2,6 +2,7 @@
 #include "../../include/orderservice/orderserviceglobal.h"
 
 COrderGlobalObj orderGlobalObj;
-CThreadPool orderThreadPool(5);
-CServer globalServer("127.0.0.1", 12345, 1100000);
+CConfig globalConfig;
+CThreadPool orderThreadPool(globalConfig.m_threadNum);
+CServer globalServer(globalConfig.m_IP, globalConfig.m_port, globalConfig.m_maxClientNumber);
 //CShareMutex globalShareMutex("accept.lock");

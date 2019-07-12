@@ -47,7 +47,6 @@ void CTcpAcceptedClientSocket::RecvHandler(int fd, void *privdata, int mask)
         else
         {
             LOG_WARN("In CTcpAcceptedClientSocket  RecvHandler recv client closed!");
-            globalServer.m_eventLoop.deleteFileEvent(fd, AE_READABLE|AE_WRITABLE);
             globalServer.RemoveClient(fd);
         }
     }

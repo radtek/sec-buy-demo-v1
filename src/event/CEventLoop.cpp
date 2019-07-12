@@ -101,7 +101,7 @@ bool CEventLoop::deleteFileEvent(int fd, int mask)
         // 未设置监听的事件类型，直接返回
         if (fe->mask == AE_NONE)
         {
-            LOG_WARN("CEventLoop::deleteFileEvent() fail for fe->mask == AE_NONEd");
+            LOG_WARN("CEventLoop::deleteFileEvent() fail for fe->mask == AE_NONE");
             result = false;
             break;
         }
@@ -136,9 +136,9 @@ bool CEventLoop::processEvents(int flags)
     try
     {
         int numevents;
-        struct timeval timeout = {1, 0}; // 1.0 seconds
+        struct timeval timeout = {globalConfig.m_eventPollWaitTime, 0}; 
         
-        numevents = m_event.ApiPoll(NULL, m_firedEvents);
+        numevents = m_event.ApiPoll(&timeout, m_firedEvents);
         //globalShareMutex.lock();
        // CServer::AcceptHandler(0,nullptr,0);
        //globalShareMutex.unLock();

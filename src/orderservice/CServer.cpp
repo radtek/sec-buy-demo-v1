@@ -1,7 +1,7 @@
 #include "../../include/orderservice/CServer.h"
 #include "../../include/orderservice/orderserviceglobal.h"
 #include "../../include/threadtask/CAcceptClientTask.h"
-#define MAX_ACCEPT_NUMBER 100000
+
 #define ACCEPT_TASK_MAX_SIZE 1000
 int *g_szFd = (int *)malloc(sizeof(int) * ACCEPT_TASK_MAX_SIZE);
 
@@ -11,7 +11,7 @@ CServer::CServer(string IP, int port, int eventSize) : m_clientCount(0), m_socke
     m_szClients = new CTcpAcceptedClientSocket[eventSize];
     m_waitClearClientIter = m_waitClearClientList.begin();
     gettimeofday(&m_nextClearClientTime, NULL);
-    m_nextClearClientTime.tv_sec = m_nextClearClientTime.tv_sec + CLEAR_CLIENT_TIME_INTTERVAL;
+    m_nextClearClientTime.tv_sec = m_nextClearClientTime.tv_sec + globalConfig.m_clearClientInterval;
     LOG_DEBUG("Out CServer  CServer IP:%s, port:%d, eventSize:%d", IP.c_str(), port, eventSize);
 }
 
@@ -99,7 +99,7 @@ void CServer::AcceptHandlerMutilpThread(int fd, void *privdata, int mask)
     CEventLoop &eventLoop = globalServer.m_eventLoop;
     CSocket &socket = globalServer.m_socket;
     int count = 0;
-    while (count < MAX_ACCEPT_NUMBER)
+    while (count < globalConfig.m_acceptClientBatchNumber)
     {
         int cliFd = socket.Accept();
         LOG_DEBUG("CServer AcceptHandlerMutilpThread cliFd:%d", cliFd);
@@ -140,13 +140,14 @@ void CServer::AcceptHandler(int fd, void *privdata, int mask)
     int count = 0;
     CEventLoop &eventLoop = globalServer.m_eventLoop;
     CSocket &socket = globalServer.m_socket;
-    while (count < MAX_ACCEPT_NUMBER)
+    while (count < globalConfig.m_acceptClientBatchNumber)
     {
         int cliFd = socket.Accept();
         if (cliFd > 0)
         {
-            if (globalServer.AddClient(cliFd))
+            if (eventLoop.createFileEvent(cliFd, AE_READABLE, CTcpAcceptedClientSocket::RecvHandler, nullptr)  > 0)
             {
+                globalServer.AddClient(cliFd);
                 ++count;
                 LOG_DEBUG("CServer AcceptHandler createFileEvent success index:%d!", count);
             }
@@ -217,16 +218,18 @@ bool CServer::processTimeEvents()
     }
     struct timeval tv;
     gettimeofday(&tv, NULL);
-     LOG_DEBUG("processTimeEvents process now time:%d,  next time:%d", tv.tv_sec, m_nextClearClientTime.tv_sec);
+    LOG_DEBUG("processTimeEvents process m_waitClearClientList.size:%d now time:%d,  next time:%d", m_waitClearClientList.size(), tv.tv_sec, m_nextClearClientTime.tv_sec);
     if (tv.tv_sec < m_nextClearClientTime.tv_sec)
     {
+        LOG_DEBUG("processTimeEvents process not reach time");
         return false;
     }
+    LOG_DEBUG("processTimeEvents process reach time");
 
     int count = 0;
     list<int>::iterator iterLastTime = m_waitClearClientIter;
     list<int>::iterator end = m_waitClearClientList.end();
-    while (count < CLEAR_CLIENT_BATCH_NUMBER)
+    while (count < globalConfig.m_clearClientBatchNumber)
     {
         //do something
 
@@ -259,6 +262,6 @@ bool CServer::processTimeEvents()
             break;
         }
     }
-    m_nextClearClientTime.tv_sec = m_nextClearClientTime.tv_sec + CLEAR_CLIENT_TIME_INTTERVAL;
+    m_nextClearClientTime.tv_sec = m_nextClearClientTime.tv_sec + globalConfig.m_clearClientInterval;
     LOG_DEBUG("processTimeEvents process count:%d", count);
 }

@@ -181,6 +181,10 @@ public:
 
     int get_level() const { return _level; }
 
+    int stop()  {  _level = -1; }
+
+    int is_empty() { return _curr_buf->empty() && _prst_buf->empty();}
+
     void persist();
 
     void try_append(const char* lvl, const char* format, ...);
@@ -246,6 +250,13 @@ void* be_thdo(void* args);
         pthread_create(&tid, NULL, be_thdo, NULL); \
         pthread_detach(tid); \
     } while (0)
+
+
+#define LOG_STOP() \
+    ring_log::ins()->stop()
+
+#define LOG_FINISH() \
+    ring_log::ins()->is_empty()
 
 //format: [LEVEL][yy-mm-dd h:m:s.ms][tid]file_name:line_no(func_name):content
 #define LOG_TRACE(fmt, args...) \

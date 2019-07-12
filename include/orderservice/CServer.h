@@ -16,8 +16,6 @@
 using namespace std;
 
 #define MAXLINE 100
-#define CLEAR_CLIENT_BATCH_NUMBER 10000
-#define CLEAR_CLIENT_TIME_INTTERVAL 120
 
 class CServer
 {
@@ -52,7 +50,7 @@ public:
 inline bool CServer::AddClient(int fd)
 {
 
-  if (fd > -1 && m_eventLoop.createFileEvent(fd, AE_READABLE, CTcpAcceptedClientSocket::RecvHandler, nullptr))
+  if (fd > -1)
   {
 
     m_szClients[fd].SetFd(fd);
@@ -67,7 +65,7 @@ inline bool CServer::AddClient(int fd)
 
 inline bool CServer::RemoveClient(int fd)
 {
-  if (fd > -1 && m_eventLoop.deleteFileEvent(fd, AE_READABLE|AE_WRITABLE))
+  if (fd > -1 && m_eventLoop.deleteFileEvent(fd, AE_READABLE|AE_WRITABLE) > 0)
   {
     m_szClients[fd].SetFd(-1);
     --m_clientCount;

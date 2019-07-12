@@ -1,0 +1,6 @@
+*.o
+debug/bin/log/
+debug/bin/orderservice
+debug/bin/userservice
+test/output/
+
